@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 
-def assign_trait_values(organism_type: str) -> list:
+def assign_trait_values(organism_type: str, organism_id: int) -> list:
     """
     Function takes in the type of organism and returns a list of the various
     traits for that organism to be passed to the next list
@@ -42,7 +42,8 @@ def assign_trait_values(organism_type: str) -> list:
         else:
             habitat[2] = 1
 
-    trait_list = [organism_type, \
+    trait_list = [organism_id, \
+                  organism_type, \
                   body_size, \
                   prey_limits, \
                   habitat, \
@@ -65,16 +66,65 @@ def define_species_list(n: int) -> list:
     the thing that defines how many consumers there are etc
     """
     # initialize species list
-    n = 4
-    sp_list = [None]*(n+1)
+
+    sp_list = [None]*n
     i = 0
-    while (i <= n):
+    while (i < n):
         organism_type = random.sample(['Producer', \
                                        'Producer', \
                                        'Consumer'], 1)[0]
-        sp_list[i] = assign_trait_values(organism_type)
+        sp_list[i] = assign_trait_values(organism_type = organism_type, \
+                                         organism_id = i)
         i += 1 # increment
-        print(i)
+
     return sp_list
 
 test_species = define_species_list(n = 4)
+
+test_species[0][4][1]
+test_species[2][3]
+
+def determine_interaction(predator: int, prey: int, species_list:list) -> int:
+    predator = 1; prey = 0; species_list = test_species
+
+
+    pred_hab = species_list[predator][4]
+    prey_hab = species_list[prey][4]
+    prey_size = species_list[prey][2]
+    pred_min = species_list[predator][3][0]
+    pred_max = species_list[predator][3][1]
+
+    if (predator == prey) or (species_list[predator][1] == 'Producer'):
+        value = 0 # this is assuming no canibalism!!!
+    elif (((prey_hab[1] >= pred_hab[1] and prey_hab[1] <= pred_hab[2]) or \
+          (prey_hab[2] >= pred_hab[1] and prey_hab[2] <= pred_hab[2])) and \
+          (prey_size <= pred_max and prey_size >= pred_min)):
+          value = 1
+    else:
+        value = 0
+
+    return value
+x = determine_interaction(1, 0, test_species)
+def create_interaction_matrix(species_list:list) -> np.array:
+    """
+    This function takes in the species list and returns an interaction matrix
+    that will form the basis of the networks to then be created
+    """
+    j = 1; i = 0; species_list = test_species
+    interaction_matrix = np.zeros(shape = (len(species_list), \
+                                           len(species_list)), \
+                                           dtype = np.int8)
+
+    for i in range(interaction_matrix.shape[0]): # rows are prey
+        for j in range(interaction_matrix.shape[1]): # cols are predators
+            interaction_matrix[i][j] = \
+                    determine_interaction(predator = j, \
+                                          prey = i, \
+                                          species_list = species_list)
+
+test_species
+interaction_matrix
+
+### Important Assumptions
+# No canibalism
+# No variation in habitat association width
